@@ -941,3 +941,7 @@ router.delete('/deletar/comentario/:id', deletarComentario);
 
 module.exports = router;
 ```
+
+### Estrutura final de pastas do backend
+
+<img src="./assets/estrutura_final.png">

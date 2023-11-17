@@ -117,7 +117,7 @@ DB_DATABASE =
 DB_PORT =
 ```
 
-### Criar arquivo na raiz do projeto chamado .gitignore com termial
+### Criar arquivo na raiz do projeto chamado .gitignore com terminal
 ```
 touch .gitignore
 ```
@@ -133,13 +133,15 @@ node_modules
 mkdir src
 ```
 
-### Dentro da pasta 'src', criar o 'app.js' e colar o código:
+### Dentro da pasta 'src', criar o arquivo 'app.js' e colar o código:
 ```
+// importar configurações para as rotas
 const express = require('express');
 const cors    = require('cors');
 const app     = express();
 require('dotenv').config();
 
+// importar arquivos de rotas
 const userRouter  = require('./routes/usersRouter');
 const loginRouter = require('./routes/loginRouter');
 const postsRouter = require('./routes/postsRouter');
@@ -149,6 +151,7 @@ app.set('port', process.env.PORT);
 app.use(cors());
 app.use(express.json());
 
+// habilitar as rotas na aplicação
 app.use('/api', userRouter);
 app.use('/api', loginRouter);
 app.use('/api', postsRouter);
@@ -157,7 +160,7 @@ app.use('/api', comentariosRouter);
 module.exports = app;
 ```
 
-### Depois de criar o arquivo 'app.js', vamos criar o 'server.js' dentro da pasta src e colar o código:
+### Depois de criar o arquivo 'app.js', vamos criar o 'server.js' dentro da pasta 'src' e colar o código:
 ```
 const app = require('./app');
 const port = app.get('port');
@@ -850,7 +853,7 @@ module.exports = {
 
 ## Criar as rotas da aplicação
 
-### Dentro da pasta 'src', vamos criar uma pasta de nome 'routes', dentro desta pasta vamos criar um arquivo com nome 'usersRouter.js' e digitar o código:
+### Dentro da pasta 'src', vamos criar uma pasta de nome 'routes'. Dentro desta pasta vamos criar um arquivo com nome 'usersRouter.js' e digitar o código:
 
 ```
 const {Router} = require('express');
@@ -879,53 +882,16 @@ module.exports = router;
 ### Dentro da pasta 'routes', vamos criar um arquivo com nome 'loginRouter.js' e colar o código:
 
 ```
-// importa as configurações do banco
-const connection = require('../config/db');
-// importa o pacote para gerar token
-const jwt = require('jsonwebtoken');
+const {Router} = require('express');
+const router = Router();
 
-async function login(request, response) {
-  // constrói a consulta no banco
-  const query = 'SELECT * FROM usuarios WHERE email = ?;';
-
-  // recupera o e-mail enviado do formulário
-  const params = Array(
-    request.body.email
-  );
-
-  // executa a consulta no banco pelo e-mail recebido
-  connection.query(query, params, (err, results) => {
-    // varifica se existe usuario com o email recebido    
-    if (results) {
-      // recupera os dados do usuario
-      const dadosUsuario = results[0];
-      // valida senha recebido do formulário e a existente no banco
-      if (dadosUsuario.senha === request.body.senha) {        
-        const id = dadosUsuario.id;
-        
-        // criando token de acesso a aplicação
-        const token = jwt.sign(
-          { id },   // payload: informações como o identificador do usuário
-          'token',      // chave secreta: A ideia é que só você saiba a sua chave secreta e que ela seja difícil a fim de dificultar a ação de ataques maliciosos
-          { expiresIn: '1h' } // opcionais
-        );
-        
-        response
-          .status(200)
-          .json({
-            success: true,
-            message: 'Sucesso!',
-            data: dadosUsuario,
-            token: token
-          })
-      }
-    }
-  })
-}
-
-module.exports = {
+const {
   login
-};
+} = require('../controllers/loginController')
+
+router.post('/logar', login);
+
+module.exports = router;
 ```
 
 ### Dentro da pasta 'routes', vamos criar um arquivo com nome 'postsRouter.js' e colar o código:
@@ -955,171 +921,23 @@ module.exports = router;
 ### Dentro da pasta 'routes', vamos criar um arquivo com nome 'comentariosRoutes.js' e colar o código:
 
 ```
-const connection = require('../config/db');
+const {Router} = require('express');
+const router = Router();
+const upload = require('../config/multer');
 
-async function salvarComentario(request, response) {
-  const query = "INSERT INTO comentarios(descricao, imagem, id_post, id_usuario) values(?,?,?,?)";
-
-  const params = Array(
-    request.body.descricao,
-    request.file.filename,
-    request.body.id_post,
-    request.body.id_usuario
-  );
-
-  connection.query(query, params, (err, results) => {
-    if (results) {
-      response
-        .status(200)
-        .json({
-          success: true,
-          message: "Sucesso!",
-          data: results
-        })
-    } else {
-      response
-        .status(400)
-        .json({
-          success: false,
-          message: 'Não deu sucesso!',
-          query: err.sql,
-          sqlMessage: err.sqlMessage
-        })
-      }
-  })
-}
-
-async function listarComentariosPost(request, response) {
-  const query = "SELECT c.* " +
-  " FROM comentarios c, posts p " +
-  " WHERE c.id_post = p.id AND p.id = ?;";
-
-  const params = Array(
-    request.body.id_post
-  );
-
-  connection.query(query, params, (err, results) => {
-    if (results) {
-      response
-        .status(200)
-        .json({
-          success: true,
-          message: "Sucesso!",
-          data: results
-        });
-    } else {
-      response
-        .status(400)
-        .json({
-          success: false,
-          message: "Deu erro!",
-          query: err.sql,
-          sqlMessage: err.sqlMessage
-        });
-    }
-  })
-}
-
-async function listarComentariosUsuario(request, response) {
-  const query = "SELECT c.* " +
-  " FROM comentarios c, usuarios u " +
-  " WHERE c.id_usuario = u.id AND u.id = ?;";
-
-  const params = Array(
-    request.body.id_usuario
-  );
-
-  connection.query(query, params, (err, results) => {
-    if (results) {
-      response
-        .status(200)
-        .json({
-          success: true,
-          message: "Sucesso!",
-          data: results
-        });
-    } else {
-      response
-        .status(400)
-        .json({
-          success: true,
-          message: "Deu erro!",
-          query: err.sql,
-          sqlMessage: err.sqlMessage
-        });
-    }
-  })
-}
-
-async function atualizarComentario(request, response) {
-  const query = "UPDATE comentarios " +
-  " SET descricao = ?, imagem = ?, id_post = ?, id_usuario = ? " +
-  " WHERE id = ?;";
-
-  const params = Array(
-    request.body.descricao,
-    request.file ? request.file.filename : null,
-    request.body.id_post,
-    request.body.id_usuario,
-    request.params.id
-  );
-
-  connection.query(query, params, (err, results) => {
-    if (results) {
-      response
-        .status(200)
-        .json({
-          success: true,
-          message: 'Sucesso!',
-          data: results
-        });
-    } else {
-      response
-        .status(400)
-        .json({
-          success: false,
-          message: 'Não deu sucesso!',
-          query: err.sql,
-          sqlMessage: err.sqlMessage
-        });
-    }
-  })
-}
-
-async function deletarComentario(request, response) {
-  const query = "DELETE FROM comentarios WHERE id = ?;";
-
-  const params = Array(
-    request.params.id
-  );
-
-  connection.query(query, params, (err, results) => {
-    if (results) {
-      response
-        .status(200)
-        .json({
-          success: true,
-          message: 'Sucesso!',
-          data: results
-        });
-    } else {
-      response
-        .status(400)
-        .json({
-          success: false,
-          message: 'Não deu sucesso!',
-          query: err.sql,
-          sqlMessage: err.sqlMessage
-        });
-    }
-  })
-}
-
-module.exports = {
+const {
   salvarComentario,
   listarComentariosPost,
   listarComentariosUsuario,
   atualizarComentario,
   deletarComentario
-}
+} = require('../controllers/comentariosController')
+
+router.post('/cadastrar/comentario', upload.single('imagem'), salvarComentario);
+router.get('/pesquisar/comentarios/post', listarComentariosPost);
+router.get('/pesquisar/comentarios/usuario', listarComentariosUsuario);
+router.put('/atualizar/comentario/:id', upload.single('imagem'), atualizarComentario);
+router.delete('/deletar/comentario/:id', deletarComentario);
+
+module.exports = router;
 ```

@@ -1,5 +1,19 @@
 # CRUD REST API com Node, Express e MySql 👨‍💻
 
+### O que veremos neste passo a passo ?
+
+#### Construção de backend para:
+- Construção do banco de dados
+- Conexão com banco de dados
+- Configuração de upload de imagem com multer
+- Construção de controllers
+- Configuração de rotas
+- Crud de usuário com imagem
+- Login com geração de token
+- Crud de post com imagem
+- Crud de comentarios com imagem
+- Testes de rotas com insomnia
+
 ## Criando o banco de dados
 
 * Utilizar as teclas CTRL + Enter para executar os comandos no workbench
